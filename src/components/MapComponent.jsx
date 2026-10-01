@@ -1,11 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
+import { generateCurvedRoute } from '../utils/distance';
 
 const BD_CENTER = [23.6850, 90.3563];
 
 export default function MapComponent({
   districtsData,
   upazilasData,
+  touristSpots = [],
   selectedFeature,
   onSelectFeature,
   onHoverFeature,
@@ -13,12 +15,17 @@ export default function MapComponent({
   onZoomChange,
   theme,
   basemapMode = 'vector',
+  showTouristPins = false,
+  routeData = null,
+  quizHighlight = null, // { districtId, type: 'correct' | 'reveal' }
   mapRef
 }) {
   const containerRef = useRef(null);
   const leafletMapRef = useRef(null);
   const districtsLayerRef = useRef(null);
   const upazilasLayerRef = useRef(null);
+  const touristLayerRef = useRef(null);
+  const routeLayerRef = useRef(null);
   const tileLayerRef = useRef(null);
 
   // 1. Initialize Leaflet Map
@@ -39,10 +46,9 @@ export default function MapComponent({
       attributionControl: false
     });
 
-    // Custom Zoom control
+    // Zoom control at bottom right
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Track zoom level changes
     map.on('zoomend', () => {
       onZoomChange(map.getZoom());
     });
@@ -56,7 +62,7 @@ export default function MapComponent({
     };
   }, []);
 
-  // 2. Manage Basemap Tiles (Pure Vector vs OpenStreetMap vs Satellite)
+  // 2. Basemap Switcher
   useEffect(() => {
     const map = leafletMapRef.current;
     if (!map) return;
@@ -69,7 +75,7 @@ export default function MapComponent({
     if (basemapMode === 'osm') {
       tileLayerRef.current = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        opacity: theme === 'dark' ? 0.35 : 0.7
+        opacity: theme === 'dark' ? 0.35 : 0.75
       }).addTo(map);
     } else if (basemapMode === 'satellite') {
       tileLayerRef.current = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -77,10 +83,9 @@ export default function MapComponent({
         opacity: 0.7
       }).addTo(map);
     }
-    // If 'vector', no external tile layer is added, keeping the canvas completely clean & watermark-free!
   }, [basemapMode, theme]);
 
-  // 3. Render District Layer (64 Districts)
+  // 3. Render Districts Layer with Spotlight & Quiz Support
   useEffect(() => {
     const map = leafletMapRef.current;
     if (!map || !districtsData) return;
@@ -90,41 +95,66 @@ export default function MapComponent({
     }
 
     const isDark = theme === 'dark';
+    const selectedDistId = selectedFeature?.type === 'district' ? selectedFeature.id : null;
 
-    const defaultStyle = (feature) => {
-      const color = feature.properties.color || '#6366f1';
+    const getStyle = (feature) => {
+      const id = feature.properties.id;
+      const baseColor = feature.properties.color || '#6366f1';
+
+      // Quiz feedback highlight
+      if (quizHighlight && quizHighlight.districtId === id) {
+        return {
+          fillColor: quizHighlight.type === 'correct' ? '#10b981' : '#f59e0b',
+          weight: 4,
+          opacity: 1,
+          color: '#ffffff',
+          fillOpacity: 0.95
+        };
+      }
+
+      // Spotlight mode: If a district is selected
+      if (selectedDistId) {
+        if (id === selectedDistId) {
+          // Selected district in spotlight
+          return {
+            fillColor: baseColor,
+            weight: 3.5,
+            opacity: 1,
+            color: '#facc15', // Golden spotlight border
+            fillOpacity: 0.9
+          };
+        } else {
+          // Non-selected districts dimmed out
+          return {
+            fillColor: baseColor,
+            weight: 1,
+            opacity: 0.25,
+            color: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)',
+            fillOpacity: 0.1
+          };
+        }
+      }
+
+      // Normal default style
       return {
-        fillColor: color,
+        fillColor: baseColor,
         weight: 1.5,
         opacity: 0.95,
         color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(15, 23, 42, 0.6)',
-        dashArray: '',
         fillOpacity: isDark ? 0.45 : 0.55
       };
     };
 
-    const highlightStyle = (feature) => {
-      const color = feature.properties.color || '#6366f1';
-      return {
-        fillColor: color,
-        weight: 3,
-        color: '#ffffff',
-        dashArray: '',
-        fillOpacity: 0.85
-      };
-    };
-
     const layer = L.geoJSON(districtsData, {
-      style: defaultStyle,
+      style: getStyle,
       onEachFeature: (feature, l) => {
         const props = feature.properties;
 
-        // Custom Tooltip
         const tooltipHtml = `
           <div class="tooltip-box">
             <span class="tooltip-title-bn">${props.bn_name || props.name} জেলা</span>
             <span class="tooltip-title-en">${props.name} District</span>
-            <span class="tooltip-sub">${props.division_bn} বিভাগ</span>
+            <span class="tooltip-sub">${props.division_bn} বিভাগ • ${props.upazila_count || ''} উপজেলা</span>
           </div>
         `;
 
@@ -138,8 +168,12 @@ export default function MapComponent({
         l.on({
           mouseover: (e) => {
             const currentZoomLevel = map.getZoom();
-            if (currentZoomLevel < 9) {
-              e.target.setStyle(highlightStyle(feature));
+            if (currentZoomLevel < 9 && (!selectedDistId || selectedDistId === props.id)) {
+              e.target.setStyle({
+                weight: 3,
+                color: '#ffffff',
+                fillOpacity: 0.85
+              });
             }
             l.openTooltip();
             onHoverFeature({
@@ -154,10 +188,18 @@ export default function MapComponent({
           },
           click: (e) => {
             L.DomEvent.stopPropagation(e);
+
+            // If quiz is currently active, forward click to quiz handler!
+            if (window.__handleQuizMapClick) {
+              window.__handleQuizMapClick(props);
+              return;
+            }
+
             onSelectFeature({
               type: 'district',
               ...props
             });
+
             map.fitBounds(e.target.getBounds(), {
               padding: [60, 60],
               maxZoom: 10,
@@ -170,9 +212,9 @@ export default function MapComponent({
     }).addTo(map);
 
     districtsLayerRef.current = layer;
-  }, [districtsData, theme]);
+  }, [districtsData, selectedFeature, quizHighlight, theme]);
 
-  // 4. Render Thana / Upazila Layer (544 Upazilas)
+  // 4. Render Thana / Upazila Layer
   useEffect(() => {
     const map = leafletMapRef.current;
     if (!map || !upazilasData) return;
@@ -188,7 +230,6 @@ export default function MapComponent({
 
     const layer = L.geoJSON(upazilasData, {
       filter: (feature) => {
-        // If a specific district is selected, focus on that district's upazilas unless zoomed deeper
         if (selectedDistrictId && currentZoom < 10) {
           return feature.properties.district_id === selectedDistrictId;
         }
@@ -262,6 +303,112 @@ export default function MapComponent({
 
     upazilasLayerRef.current = layer;
   }, [upazilasData, currentZoom, selectedFeature]);
+
+  // 5. Render Tourist Landmarks Layer (Pins & Popups)
+  useEffect(() => {
+    const map = leafletMapRef.current;
+    if (!map) return;
+
+    if (touristLayerRef.current) {
+      map.removeLayer(touristLayerRef.current);
+      touristLayerRef.current = null;
+    }
+
+    if (!showTouristPins || !touristSpots || touristSpots.length === 0) return;
+
+    const markersGroup = L.layerGroup();
+
+    touristSpots.forEach(spot => {
+      const iconHtml = `
+        <div class="tourist-pin-badge" title="${spot.bn_name}">
+          <span class="pin-pulse"></span>
+          <div class="pin-inner-icon">📍</div>
+        </div>
+      `;
+
+      const customIcon = L.divIcon({
+        className: 'tourist-leaflet-marker',
+        html: iconHtml,
+        iconSize: [28, 28],
+        iconAnchor: [14, 28],
+        popupAnchor: [0, -28]
+      });
+
+      const popupHtml = `
+        <div class="tourist-popup-card">
+          <span class="popup-tag">দর্শনীয় স্থান</span>
+          <h4 class="popup-title">${spot.bn_name}</h4>
+          <span class="popup-sub">${spot.name} • ${spot.district_bn}</span>
+          <p class="popup-desc">${spot.desc}</p>
+        </div>
+      `;
+
+      const marker = L.marker([spot.lat, spot.lng], { icon: customIcon })
+        .bindPopup(popupHtml, { className: 'custom-leaflet-popup' });
+
+      markersGroup.addLayer(marker);
+    });
+
+    markersGroup.addTo(map);
+    touristLayerRef.current = markersGroup;
+  }, [showTouristPins, touristSpots]);
+
+  // 6. Render Distance Animated Route Line
+  useEffect(() => {
+    const map = leafletMapRef.current;
+    if (!map) return;
+
+    if (routeLayerRef.current) {
+      map.removeLayer(routeLayerRef.current);
+      routeLayerRef.current = null;
+    }
+
+    if (!routeData || !routeData.p1 || !routeData.p2) return;
+
+    const group = L.layerGroup();
+
+    // Curved bezier path
+    const curvePoints = generateCurvedRoute(routeData.p1, routeData.p2, 35);
+
+    const polyline = L.polyline(curvePoints, {
+      color: '#6366f1',
+      weight: 4,
+      dashArray: '8, 8',
+      opacity: 0.9,
+      className: 'animated-route-line'
+    });
+
+    // Start & End pulse circle markers
+    const startMarker = L.circleMarker(routeData.p1, {
+      radius: 7,
+      fillColor: '#10b981',
+      color: '#ffffff',
+      weight: 2,
+      fillOpacity: 1
+    }).bindTooltip(`শুরু: ${routeData.originName}`, { permanent: true, direction: 'top' });
+
+    const endMarker = L.circleMarker(routeData.p2, {
+      radius: 7,
+      fillColor: '#ef4444',
+      color: '#ffffff',
+      weight: 2,
+      fillOpacity: 1
+    }).bindTooltip(`গন্তব্য: ${routeData.destName}`, { permanent: true, direction: 'top' });
+
+    group.addLayer(polyline);
+    group.addLayer(startMarker);
+    group.addLayer(endMarker);
+
+    group.addTo(map);
+    routeLayerRef.current = group;
+
+    // Fit map bounds to view both points
+    map.fitBounds([routeData.p1, routeData.p2], {
+      padding: [80, 80],
+      animate: true,
+      duration: 1.2
+    });
+  }, [routeData]);
 
   return (
     <div className="map-viewport" ref={containerRef} id="leaflet-map-canvas" />

@@ -1,14 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   ChevronRight,
   Maximize2,
   MapPin,
-  Layers,
-  Compass,
+  Utensils,
+  Sun,
+  Cloud,
+  CloudRain,
+  CloudLightning,
+  CloudFog,
+  Wind,
+  Droplets,
+  Waves,
   Building,
-  Info
+  Camera,
+  Info,
+  Sparkles
 } from 'lucide-react';
+import { fetchDistrictWeather } from '../services/weather';
 
 export default function Sidebar({
   isOpen,
@@ -17,13 +27,41 @@ export default function Sidebar({
   onSelectFeature,
   onResetView,
   upazilasInDistrict = [],
+  heritageData = {},
   onZoomToCurrent
 }) {
+  const [weather, setWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+
+  // Fetch weather when selectedFeature changes
+  useEffect(() => {
+    if (!selectedFeature || !selectedFeature.center) {
+      setWeather(null);
+      return;
+    }
+
+    let isMounted = true;
+    setWeatherLoading(true);
+
+    const [lat, lng] = selectedFeature.center;
+    fetchDistrictWeather(lat, lng)
+      .then(data => {
+        if (isMounted) {
+          setWeather(data);
+          setWeatherLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setWeatherLoading(false);
+      });
+
+    return () => { isMounted = false; };
+  }, [selectedFeature]);
+
   if (!isOpen) return null;
 
   const isDistrict = selectedFeature?.type === 'district';
   const isUpazila = selectedFeature?.type === 'upazila';
-  const isDivision = selectedFeature?.type === 'division';
 
   const titleBn = selectedFeature?.bn_name || 'বাংলাদেশ';
   const titleEn = selectedFeature?.name || 'Bangladesh';
@@ -32,6 +70,22 @@ export default function Sidebar({
   const districtBn = selectedFeature?.district_bn || (isDistrict ? titleBn : '');
   const districtEn = selectedFeature?.district_name || (isDistrict ? titleEn : '');
   const color = selectedFeature?.color || '#6366f1';
+
+  // Heritage data for selected district
+  const districtId = isDistrict ? selectedFeature.id : selectedFeature?.district_id;
+  const heritage = heritageData[districtId] || {};
+
+  // Render weather icon helper
+  const renderWeatherIcon = (iconName) => {
+    switch (iconName) {
+      case 'cloud-rain': return <CloudRain size={24} color="#60a5fa" />;
+      case 'cloud-lightning': return <CloudLightning size={24} color="#fbbf24" />;
+      case 'cloud-fog': return <CloudFog size={24} color="#94a3b8" />;
+      case 'cloud': return <Cloud size={24} color="#cbd5e1" />;
+      case 'cloud-sun': return <Cloud size={24} color="#f59e0b" />;
+      default: return <Sun size={24} color="#f59e0b" />;
+    }
+  };
 
   return (
     <aside className={`floating-sidebar ${isOpen ? '' : 'collapsed'}`} id="feature-info-sidebar">
@@ -70,7 +124,7 @@ export default function Sidebar({
                 className={`breadcrumb-item ${!isUpazila ? 'active' : ''}`}
                 onClick={() => onSelectFeature({
                   type: 'district',
-                  id: selectedFeature.district_id || selectedFeature.id,
+                  id: districtId,
                   name: districtEn,
                   bn_name: districtBn,
                   division_name: divisionEn,
@@ -126,11 +180,75 @@ export default function Sidebar({
                   <MapPin size={12} />
                   {isUpazila ? 'উপজেলা / থানা' : isDistrict ? 'জেলা' : 'প্রশাসনিক বিভাগ'}
                 </span>
+                {heritage.famous_for && (
+                  <span className="spotlight-active-badge">
+                    <Sparkles size={11} /> স্পটলাইট
+                  </span>
+                )}
               </div>
 
               <h2 className="feature-title-bn">{titleBn}</h2>
               <span className="feature-title-en">{titleEn}</span>
+
+              {heritage.famous_for && (
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.4 }}>
+                  {heritage.famous_for}
+                </p>
+              )}
             </div>
+
+            {/* Live Weather Widget */}
+            {weather && (
+              <div className="weather-widget-card">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {renderWeatherIcon(weather.icon)}
+                    <div>
+                      <div className="weather-temp">{weather.temp}°C</div>
+                      <div className="weather-condition">{weather.condition}</div>
+                    </div>
+                  </div>
+                  <div className="weather-metrics">
+                    <div className="weather-sub-item">
+                      <Droplets size={12} color="#60a5fa" />
+                      <span>{weather.humidity}% আর্দ্রতা</span>
+                    </div>
+                    <div className="weather-sub-item">
+                      <Wind size={12} color="#94a3b8" />
+                      <span>{weather.windSpeed} km/h বাতাস</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Famous Traditional Food Card */}
+            {heritage.famous_food && (
+              <div className="heritage-card food-theme">
+                <div className="heritage-card-header">
+                  <Utensils size={15} color="#f59e0b" />
+                  <span className="heritage-card-title">ঐতিহ্যবাহী বিখ্যাত খাবার</span>
+                </div>
+                <p className="heritage-card-content">{heritage.famous_food}</p>
+              </div>
+            )}
+
+            {/* Top Tourist Spots Card */}
+            {heritage.tourist_spots && heritage.tourist_spots.length > 0 && (
+              <div className="heritage-card tourism-theme">
+                <div className="heritage-card-header">
+                  <Camera size={15} color="#06b6d4" />
+                  <span className="heritage-card-title">শীর্ষ দর্শনীয় স্থান</span>
+                </div>
+                <div className="tourist-spots-chips">
+                  {heritage.tourist_spots.map((spot, i) => (
+                    <span key={i} className="tourist-chip">
+                      {spot}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Statistics & Meta Grid */}
             <div className="stat-grid">
@@ -155,24 +273,28 @@ export default function Sidebar({
                 </div>
               )}
 
-              <div className="stat-card">
-                <span className="stat-label">অক্ষাংশ (Lat)</span>
-                <span className="stat-value">
-                  {selectedFeature.center ? selectedFeature.center[0].toFixed(3) : '–'}° N
-                </span>
-              </div>
+              {heritage.rivers && heritage.rivers.length > 0 && (
+                <div className="stat-card">
+                  <span className="stat-label">প্রধান নদ-নদী</span>
+                  <span className="stat-value" style={{ fontSize: '0.85rem' }}>
+                    {heritage.rivers.join(', ')}
+                  </span>
+                </div>
+              )}
 
-              <div className="stat-card">
-                <span className="stat-label">দ্রাঘিমাংশ (Lng)</span>
-                <span className="stat-value">
-                  {selectedFeature.center ? selectedFeature.center[1].toFixed(3) : '–'}° E
-                </span>
-              </div>
+              {heritage.area_sqkm && (
+                <div className="stat-card">
+                  <span className="stat-label">আনুমানিক আয়তন</span>
+                  <span className="stat-value">
+                    {heritage.area_sqkm.toLocaleString()} <small style={{ fontSize: '0.7rem' }}>বর্গ কিমি</small>
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Quick Actions */}
             <button
-              className="action-btn"
+              className="action-btn primary-glow-btn"
               onClick={onZoomToCurrent}
               style={{ justifyContent: 'center', width: '100%', padding: '10px' }}
               title="এলাকাটিতে কাছে থেকে দেখুন"
@@ -220,14 +342,12 @@ export default function Sidebar({
             />
             <Info size={36} color="var(--accent-primary)" />
             <h2 className="feature-title-bn" style={{ fontSize: '1.4rem' }}>
-              বাংলাদেশ মানচিত্র নির্দেশিকা
+              বাংলাদেশ মানচিত্র পোর্টাল
             </h2>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              • মানচিত্রের যেকোনো <strong>জেলার</strong> ওপর মাউস রাখলে জেলার নাম ভেসে উঠবে।
+              • মানচিত্রের যেকোনো <strong>জেলার</strong> ওপর ক্লিক করলে স্পটলাইট মোডে বিস্তারিত তথ্য, বিখ্যাত খাবার, আবহাওয়া ও থানা তালিকা দেখতে পাবেন।
               <br /><br />
-              • জেলায় ক্লিক করলে অথবা জুম ইন করলে স্বয়ংক্রিয়ভাবে <strong>থানা ও উপজেলাগুলোর</strong> সীমানা ফুটে উঠবে।
-              <br /><br />
-              • উপরের সার্চ বারে যেকোনো জেলা বা থানার নাম লিখে সরাসরি জাম্প করুন।
+              • উপরের <strong>টুলস মেনু</strong> থেকে দুটি জেলার সড়ক দূরত্ব মাপুন, জেলা তুলনা করুন অথবা কুইজ খেলুন!
             </p>
           </div>
         )}

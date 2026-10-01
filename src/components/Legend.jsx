@@ -1,11 +1,14 @@
 import React from 'react';
-import { Layers, ZoomIn, Globe, Map as MapIcon, Image as ImageIcon } from 'lucide-react';
+import { Layers, ZoomIn, Globe, Map as MapIcon, Image as ImageIcon, Camera, Sparkles } from 'lucide-react';
 
 export default function Legend({
   currentZoom,
   hoveredFeature,
+  selectedFeature,
   basemapMode,
-  onChangeBasemap
+  onChangeBasemap,
+  showTouristPins,
+  onToggleTouristPins
 }) {
   const isThanaView = currentZoom >= 9;
 
@@ -18,6 +21,14 @@ export default function Legend({
           {isThanaView ? 'থানা / উপজেলা ভিউ' : 'জেলা ভিউ (৬৪ জেলা)'}
         </span>
       </div>
+
+      {/* Spotlight Indicator when district is selected */}
+      {selectedFeature && selectedFeature.type === 'district' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#facc15', fontWeight: 600 }}>
+          <Sparkles size={13} />
+          <span>{selectedFeature.bn_name} স্পটলাইট</span>
+        </div>
+      )}
 
       {/* Hovered Feature Quick Peek */}
       {hoveredFeature ? (
@@ -33,13 +44,23 @@ export default function Legend({
       ) : (
         <div className="legend-indicator">
           <span style={{ color: 'var(--text-muted)' }}>
-            {isThanaView ? 'থানার সীমানা প্রদর্শিত হচ্ছে' : 'যেকোনো জেলায় ক্লিক বা জুম করলে থানা দেখা যাবে'}
+            {isThanaView ? 'থানার সীমানা প্রদর্শিত হচ্ছে' : 'যেকোনো জেলায় ক্লিক করলে স্পটলাইট চালু হবে'}
           </span>
         </div>
       )}
 
-      {/* Basemap Toggle Buttons */}
+      {/* Basemap & Tourism Toggle Group */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: 'auto' }}>
+        <button
+          className={`action-btn ${showTouristPins ? 'active-pill-btn' : ''}`}
+          style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '6px' }}
+          onClick={onToggleTouristPins}
+          title={showTouristPins ? 'পর্যটন স্পট বন্ধ করুন' : 'পর্যটন স্পট দেখান'}
+        >
+          <Camera size={12} color={showTouristPins ? '#fff' : '#06b6d4'} />
+          স্পট
+        </button>
+
         <button
           className={`action-btn ${basemapMode === 'vector' ? 'active' : ''}`}
           style={{
