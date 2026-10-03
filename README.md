@@ -1,69 +1,63 @@
-# 🇧🇩 বাংলাদেশের মানচিত্র - Interactive Bangladesh Map
+# 🖼️ PixelRename Studio
 
-একটি আধুনিক, দ্রুতগতির এবং সমৃদ্ধ ইন্টারেক্টিভ জিআইএস (GIS) ওয়েব অ্যাপ্লিকেশন। এতে বাংলাদেশের ৮টি প্রশাসনিক বিভাগ, ৬৪টি জেলা এবং ৫০০+ উপজেলার সীমানা, হোভার এফেক্ট, স্মার্ট জুম এবং দ্রুত অনুসন্ধান ব্যবস্থা অন্তর্ভুক্ত রয়েছে।
+A fast, beautiful, and 100% private client-side image renaming and format conversion utility built with React and Vite.
 
-![Bangladesh Map Preview](public/data/screenshot-preview.png)
-
----
-
-## ✨ প্রধান বৈশিষ্ট্যসমূহ (Key Features)
-
-1. **বাংলাদেশের পূর্ণাঙ্গ ভেক্টর মানচিত্র (High-Performance Vector Map):**
-   - কোনো ভারী এক্সটার্নাল টাইল ছাড়াই সম্পূর্ণ পরিষ্কার, মসৃণ ও ওয়াটারমার্ক-মুক্ত ভেক্টর রেন্ডারিং।
-   - ৮টি বিভাগের জন্য নান্দনিক কালার প্যালেট।
-
-2. **জেলা লেভেল হোভার ও ইন্টারঅ্যাকশন (৬৪ জেলা):**
-   - যেকোনো জেলার ওপর মাউস রাখলে গ্লোয়িং বর্ডার ও সুন্দর টুলটিপে জেলার নাম (বাংলা ও ইংরেজি) এবং বিভাগের নাম প্রদর্শিত হয়।
-   - জেলায় ক্লিক করলে ক্যামেরা স্মুথলি জুম ইন হয়ে সেই জেলায় ফোকাস হয়।
-
-3. **স্বয়ংক্রিয় থানা ও উপজেলা লেয়ার (৫০০+ থানা):**
-   - জুম লেভেল ৯ বা তার বেশি হলে (অথবা কোনো জেলা নির্বাচন করলে) তাৎক্ষণিকভাবে থানা ও উপজেলার নিখুঁত সীমানা দৃশ্যমান হয়।
-   - থানার ওপর মাউস নিলে গোল্ডেন হাইলাইট এবং সংশ্লিষ্ট জেলার নামসহ পপআপ প্রদর্শিত হয়।
-
-4. **বিভাগভিত্তিক দ্রুত জাম্প (Division Quick Pills):**
-   - হেডার থেকে এক ক্লিকেই ঢাকা, চট্টগ্রাম, সিলেট, রাজশাহী, খুলনা, বরিশাল, রংপুর বা ময়মনসিংহ বিভাগে ক্যামেরা নিয়ে যাওয়া যায়।
-
-5. **স্মার্ট সার্চ ও অটো-কমপ্লিট (Search Autocomplete):**
-   - বাংলা বা ইংরেজি—যেকোনো ভাষায় জেলা বা থানার নাম টাইপ করলেই ড্রপডাউন সাজেশন আসে এবং সিলেক্ট করলে সরাসরি সেখানে জুম হয়।
-
-6. **সাইডবার তথ্য প্যানেল ও ব্রেডক্রাম্ব:**
-   - নির্বাচিত অঞ্চল অনুযায়ী `বাংলাদেশ > বিভাগ > জেলা > থানা` নেভিগেশন।
-   - অক্ষাংশ (Lat), দ্রাঘিমাংশ (Lng) এবং জেলার অধীনে থাকা সকল থানার ক্লিকযোগ্য তালিকা।
-
-7. **ডার্ক / লাইট মোড ও বেসম্যাপ সুইচ:**
-   - ডার্ক মোড এবং লাইট মোডের মধ্যে তাৎক্ষণিক টগল।
-   - ক্লিন ভেক্টর, ওপেনস্ট্রিটম্যাপ এবং স্যাটেলাইট মোড নির্বাচন করার সুবিধা।
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![React](https://img.shields.io/badge/React-19-61dafb.svg)
+![Vite](https://img.shields.io/badge/Vite-6-646cff.svg)
+![Security](https://img.shields.io/badge/Processing-100%25%20In--Browser-brightgreen.svg)
 
 ---
 
-## 🛠 প্রযুক্তি ও লাইব্রেরি (Tech Stack)
+## ✨ Features
 
-* **ফ্রেমওয়ার্ক:** React 19 + Vite
-* **ম্যাপিং ইঞ্জিন:** Leaflet.js (Vector GeoJSON layers)
-* **আইকন:** Lucide React
-* **স্টাইলিং:** Vanilla CSS (Glassmorphism & Neon Design System)
-* **ডাটা সোর্স:** BBS / Humanitarian Data Exchange (HDX) ও geoBoundaries (অপ্টিমাইজড ও সরলীকৃত GeoJSON)
+- 🔒 **100% Private & In-Browser**: Files never leave your device. All renaming, canvas format conversion, and zip archiving execute entirely client-side.
+- ⚡ **Instant Drag-and-Drop**: Upload single or multiple images effortlessly via drag-and-drop or file picker (supports JPG, PNG, WebP, SVG, GIF, AVIF).
+- ✏️ **Dedicated Filename Input**: View and edit the image name in a dedicated input box with a locked extension badge.
+- 🚀 **Quick SEO Presets**: One-click format pills for:
+  - `kebab-case` (SEO friendly slugs)
+  - `snake_case`
+  - `camelCase`
+  - `lowercase`
+  - `+ date` (appends current timestamp `YYYY-MM-DD`)
+  - `reset` (reverts back to original name)
+- 🔄 **NextGen Image Format Converter**: Convert images on the fly to **WebP**, **PNG**, or **JPG** with HTML5 Canvas.
+- 📦 **Batch Sequence Renamer**: Rename multiple images at once with smart patterns (e.g. `banner-[01]` or `photo-[n]`).
+- 🗂️ **Batch ZIP Downloader**: Download all renamed and converted files in one single click as a `.zip` archive.
+- 🌓 **Sleek Glassmorphic UI**: High-contrast Dark and Light mode support with smooth transitions.
+- 🎉 **Confetti Celebrations**: Visual feedback on single and batch downloads.
 
 ---
 
-## 🚀 লোকাল সেটআপ ও রান করার নিয়ম
+## 🛠️ Tech Stack
 
+- **Framework**: React 19 + Vite
+- **Styling**: Vanilla CSS (Tailored Design System, CSS Variables, Glassmorphism)
+- **Icons**: Lucide React
+- **Dropzone**: `react-dropzone`
+- **Archiving**: `jszip`
+- **Effects**: `canvas-confetti`
+
+---
+
+## 🚀 Getting Started
+
+### 1. Install dependencies
 ```bash
-# ডিপেন্ডেন্সি ইনস্টল করুন
 npm install
+```
 
-# ডেভেলপমেন্ট সার্ভার চালু করুন
+### 2. Start development server
+```bash
 npm run dev
 ```
 
-ব্রাউজারে `http://localhost:5173` ওপেন করে মানচিত্রটি উপভোগ করুন।
-
+### 3. Build for production
 ```bash
-# প্রোডাকশন বিল্ড তৈরি করতে
 npm run build
 ```
 
 ---
 
-## 📄 লাইসেন্স
-MIT License
+## 📄 License
+MIT

@@ -1,287 +1,45 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  Search,
-  X,
-  RotateCcw,
-  Sun,
-  Moon,
-  Wrench,
-  Navigation,
-  Scale,
-  Trophy,
-  MapPin,
-  Camera,
-  ChevronDown
-} from 'lucide-react';
+import React from 'react';
+import { Sparkles, Sun, Moon, ShieldCheck, Image as ImageIcon } from 'lucide-react';
 
-const DIVISIONS = [
-  { id: 'dhaka', name: 'Dhaka', bn: 'ঢাকা', color: '#6366f1' },
-  { id: 'chattogram', name: 'Chattogram', bn: 'চট্টগ্রাম', color: '#0284c7' },
-  { id: 'sylhet', name: 'Sylhet', bn: 'সিলেট', color: '#059669' },
-  { id: 'rajshahi', name: 'Rajshahi', bn: 'রাজশাহী', color: '#d97706' },
-  { id: 'khulna', name: 'Khulna', bn: 'খুলনা', color: '#0d9488' },
-  { id: 'barishal', name: 'Barishal', bn: 'বরিশাল', color: '#7c3aed' },
-  { id: 'rangpur', name: 'Rangpur', bn: 'রংপুর', color: '#db2777' },
-  { id: 'mymensingh', name: 'Mymensingh', bn: 'ময়মনসিংহ', color: '#ea580c' },
-];
-
-export default function Header({
-  searchIndex = [],
-  onSelectFeature,
-  onSelectDivision,
-  onResetView,
-  selectedDivision,
-  theme,
-  onToggleTheme,
-  showTouristPins,
-  onToggleTouristPins,
-  onOpenDistanceCalc,
-  onOpenCompare,
-  onOpenQuiz
-}) {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isToolsOpen, setIsToolsOpen] = useState(false);
-
-  const searchRef = useRef(null);
-  const toolsRef = useRef(null);
-
-  // Close dropdowns on outside click
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setIsSearchOpen(false);
-      }
-      if (toolsRef.current && !toolsRef.current.contains(e.target)) {
-        setIsToolsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSearchChange = (e) => {
-    const val = e.target.value;
-    setQuery(val);
-
-    if (!val.trim()) {
-      setResults([]);
-      setIsSearchOpen(false);
-      return;
-    }
-
-    const q = val.trim().toLowerCase();
-    const filtered = searchIndex
-      .filter(item =>
-        item.name.toLowerCase().includes(q) ||
-        (item.bn_name && item.bn_name.includes(q))
-      )
-      .slice(0, 10);
-
-    setResults(filtered);
-    setIsSearchOpen(true);
-  };
-
-  const handleSelectResult = (item) => {
-    onSelectFeature(item);
-    setQuery('');
-    setIsSearchOpen(false);
-  };
-
+export default function Header({ theme, toggleTheme, imageCount }) {
   return (
     <header className="app-header">
-      {/* Brand Logo & Name */}
-      <div className="brand-section" onClick={onResetView} title="পুরো বাংলাদেশে ফিরে যান">
-        <div className="flag-icon" />
-        <div className="brand-titles">
-          <h1 className="brand-title">বাংলাদেশের মানচিত্র</h1>
-          <span className="brand-subtitle">Interactive Geospatial Portal</span>
-        </div>
-      </div>
-
-      {/* Autocomplete Search Bar */}
-      <div className="search-container" ref={searchRef}>
-        <div className="search-input-wrapper">
-          <Search size={18} color="var(--text-muted)" />
-          <input
-            type="text"
-            className="search-input"
-            placeholder="জেলা বা থানা খুঁজুন (যেমন: সাভার, মিরপুর)..."
-            value={query}
-            onChange={handleSearchChange}
-            onFocus={() => query.trim() && setIsSearchOpen(true)}
-            id="map-search-input"
-          />
-          {query && (
-            <button
-              className="clear-search-btn"
-              onClick={() => { setQuery(''); setResults([]); setIsSearchOpen(false); }}
-              title="মুছুন"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
-
-        {/* Dropdown Results */}
-        {isSearchOpen && results.length > 0 && (
-          <div className="search-dropdown">
-            {results.map((item, index) => {
-              const badgeLabel =
-                item.type === 'division' ? 'বিভাগ' :
-                item.type === 'district' ? 'জেলা' : 'থানা / উপজেলা';
-              return (
-                <div
-                  key={`${item.type}-${item.id || item.name}-${index}`}
-                  className="search-result-item"
-                  onClick={() => handleSelectResult(item)}
-                >
-                  <div className="search-item-info">
-                    <span className="search-item-name">
-                      {item.bn_name} ({item.name})
-                    </span>
-                    <span className="search-item-parent">
-                      {item.parent}
-                    </span>
-                  </div>
-                  <span
-                    className="search-item-badge"
-                    style={{
-                      borderLeft: `3px solid ${item.color || 'var(--accent-primary)'}`
-                    }}
-                  >
-                    {badgeLabel}
-                  </span>
-                </div>
-              );
-            })}
+      <div className="header-container">
+        <div className="brand">
+          <div className="logo-badge">
+            <ImageIcon className="logo-icon" size={24} />
           </div>
-        )}
-      </div>
+          <div>
+            <div className="title-row">
+              <h1 className="brand-title">PixelRename</h1>
+              <span className="version-tag">v1.0</span>
+            </div>
+            <p className="brand-subtitle">Smart SEO Filename Sanitizer & Format Converter</p>
+          </div>
+        </div>
 
-      {/* Division Pills */}
-      <div className="division-pills-wrapper">
-        {DIVISIONS.map(div => {
-          const isActive = selectedDivision === div.name;
-          return (
-            <button
-              key={div.id}
-              className={`division-pill ${isActive ? 'active' : ''}`}
-              style={{
-                color: isActive ? '#fff' : undefined,
-                background: isActive ? div.color : undefined,
-                borderColor: isActive ? div.color : undefined
-              }}
-              onClick={() => onSelectDivision(div)}
-              title={`${div.bn} বিভাগে জুম করুন`}
-            >
-              <span
-                className="pill-dot"
-                style={{ backgroundColor: div.color }}
-              />
-              {div.bn}
-            </button>
-          );
-        })}
-      </div>
+        <div className="header-actions">
+          <div className="privacy-badge" title="All processing happens inside your browser. No files leave your device.">
+            <ShieldCheck size={16} className="privacy-icon" />
+            <span>100% In-Browser & Private</span>
+          </div>
 
-      {/* Tools Dropdown Menu & Header Actions */}
-      <div className="header-actions">
-        {/* Tools Menu */}
-        <div style={{ position: 'relative' }} ref={toolsRef}>
-          <button
-            className="action-btn"
-            onClick={() => setIsToolsOpen(prev => !prev)}
-            id="tools-menu-btn"
-            title="স্মার্ট টুলস মেনু"
-          >
-            <Wrench size={15} color="#818cf8" />
-            <span>টুলস</span>
-            <ChevronDown size={13} />
-          </button>
-
-          {isToolsOpen && (
-            <div className="tools-dropdown-menu">
-              <div
-                className="tool-menu-item"
-                onClick={() => { setIsToolsOpen(false); onOpenDistanceCalc(); }}
-              >
-                <Navigation size={15} color="#818cf8" />
-                <div className="tool-menu-text">
-                  <span className="tool-title">দূরত্ব পরিমাপক</span>
-                  <span className="tool-desc">দুই জেলার সড়ক দূরত্ব ও সময়</span>
-                </div>
-              </div>
-
-              <div
-                className="tool-menu-item"
-                onClick={() => { setIsToolsOpen(false); onOpenCompare(); }}
-              >
-                <Scale size={15} color="#fbbf24" />
-                <div className="tool-menu-text">
-                  <span className="tool-title">জেলা তুলনা</span>
-                  <span className="tool-desc">পাশাপাশি দুই জেলার তুলনামূলক চিত্র</span>
-                </div>
-              </div>
-
-              <div
-                className="tool-menu-item"
-                onClick={() => { setIsToolsOpen(false); onOpenQuiz(); }}
-              >
-                <Trophy size={15} color="#f59e0b" />
-                <div className="tool-menu-text">
-                  <span className="tool-title">বাংলাদেশ কুইজ গেম</span>
-                  <span className="tool-desc">মানচিত্রে জেলা খোঁজার রোমাঞ্চকর খেলা</span>
-                </div>
-              </div>
-
-              <div
-                className="tool-menu-item"
-                onClick={() => { setIsToolsOpen(false); onToggleTouristPins(); }}
-              >
-                <Camera size={15} color="#06b6d4" />
-                <div className="tool-menu-text">
-                  <span className="tool-title">
-                    {showTouristPins ? 'পর্যটন স্পট লুকান' : 'শীর্ষ পর্যটন স্পটসমূহ'}
-                  </span>
-                  <span className="tool-desc">ম্যাপে দর্শনীয় স্থানের পিন মার্কার</span>
-                </div>
-              </div>
+          {imageCount > 0 && (
+            <div className="count-pill">
+              <span className="count-number">{imageCount}</span>
+              <span className="count-label">{imageCount === 1 ? 'image' : 'images'}</span>
             </div>
           )}
+
+          <button
+            onClick={toggleTheme}
+            className="theme-toggle-btn"
+            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            aria-label="Toggle Theme"
+          >
+            {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
+          </button>
         </div>
-
-        {/* Tourist Pins Direct Quick Toggle */}
-        <button
-          className={`action-btn ${showTouristPins ? 'active-pill-btn' : ''}`}
-          onClick={onToggleTouristPins}
-          title={showTouristPins ? 'পর্যটন পিন লুকান' : 'শীর্ষ পর্যটন স্পট দেখান'}
-        >
-          <Camera size={15} color={showTouristPins ? '#fff' : '#06b6d4'} />
-          <span className="hide-on-mobile">পর্যটন</span>
-        </button>
-
-        {/* Reset View Button */}
-        <button
-          className="action-btn"
-          onClick={onResetView}
-          title="মানচিত্র রিসেট করুন"
-          id="reset-view-btn"
-        >
-          <RotateCcw size={15} />
-          <span>রিসেট</span>
-        </button>
-
-        {/* Theme Toggle Button */}
-        <button
-          className="action-btn icon-only"
-          onClick={onToggleTheme}
-          title={theme === 'dark' ? 'লাইট মোড' : 'ডার্ক মোড'}
-          id="theme-toggle-btn"
-        >
-          {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-        </button>
       </div>
     </header>
   );
